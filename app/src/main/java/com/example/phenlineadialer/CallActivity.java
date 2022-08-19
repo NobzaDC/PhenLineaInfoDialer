@@ -247,6 +247,12 @@ public class CallActivity extends AppCompatActivity {
 
         binding.callState.setText(asString(state));
 
+        if (state == Call.STATE_DIALING) { //DIALING
+            binding.speakerContainer.setVisibility(View.VISIBLE);
+        } else {
+            binding.btnAnswer.setVisibility(View.GONE);
+        }
+
         if (state == Call.STATE_RINGING) { //RINGING
             binding.btnHangup.setVisibility(View.VISIBLE);
             binding.btnAnswer.setVisibility(View.VISIBLE);
@@ -256,8 +262,8 @@ public class CallActivity extends AppCompatActivity {
 
         if (state == Call.STATE_ACTIVE){ //IN CALL
             binding.btnHangup.setVisibility(View.VISIBLE);
-            binding.speakerContainer.setVisibility(View.VISIBLE);
 
+            binding.speakerContainer.setVisibility(View.VISIBLE);
             binding.callTimer.setBase(SystemClock.elapsedRealtime());
             binding.callTimer.stop();
 
@@ -266,8 +272,7 @@ public class CallActivity extends AppCompatActivity {
             //record();
         }
 
-        if(CollectionsKt.listOf(new Integer[]{
-        Call.STATE_DISCONNECTED}).contains(state)){ //CALL END
+        if(state == Call.STATE_DISCONNECTED){ //CALL END
         //stopRecord();
         binding.callTimer.stop();
         binding.btnHangup.setVisibility(View.GONE);
