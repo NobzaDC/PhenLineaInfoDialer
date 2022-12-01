@@ -1,4 +1,4 @@
-package com.example.phenlineadialer.Helpers;
+package com.example.phenlineadialer.helpers;
 
 import android.content.Context;
 import android.content.SharedPreferences;

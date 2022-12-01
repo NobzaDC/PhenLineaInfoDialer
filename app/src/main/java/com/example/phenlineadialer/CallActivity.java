@@ -1,61 +1,37 @@
 package com.example.phenlineadialer;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.content.ComponentName;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
-import android.content.ServiceConnection;
-import android.graphics.BitmapFactory;
-import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.media.MediaRecorder;
-import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.IBinder;
 import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.telecom.Call;
-import android.telecom.InCallService;
-import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Predicate;
-import kotlin.collections.CollectionsKt;
-import timber.log.Timber;
+import retrofit2.Callback;
+import retrofit2.Response;
+import services.GenusuarioTelefonoService;
 
 import static com.example.phenlineadialer.CallService.SPEAKER_OFF;
 import static com.example.phenlineadialer.CallService.SPEAKER_ON;
 import static com.example.phenlineadialer.Constants.asString;
 
-import androidx.annotation.RequiresApi;
-
-import com.example.phenlineadialer.Models.GenusuarioTelefonoModel;
 import com.example.phenlineadialer.databinding.ActivityCallBinding;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.ksoap2.SoapEnvelope;
-import org.ksoap2.serialization.SoapObject;
-import org.ksoap2.serialization.SoapPrimitive;
-import org.ksoap2.serialization.SoapSerializationEnvelope;
-import org.ksoap2.transport.HttpTransportSE;
+import com.example.phenlineadialer.helpers.MyRetrofit;
+import com.example.phenlineadialer.models.GenusuarioTelefonos;
 
 public class CallActivity extends AppCompatActivity {
 
@@ -67,24 +43,12 @@ public class CallActivity extends AppCompatActivity {
     private String number;
     private OngoingCall ongoingCall;
 
-    //SOAP
-    private final static String NAMESPACE = "http://tempuri.org/";
-    private final static String METHOD_NAME = "ConsultarListaSQL";
-    private final static String SOAP_ACTION = "http://tempuri.org/ConsultarListaSQL";
-    private final static String URL = "https://www.phenlinea.info/WSPhEnlinea/InformesPhenlinea.asmx";
-
-    final static String CAMPO = "GENUsuario.CodigoBien + ' - ' +  GENUsuarioTelefonos.Telefono+ ' - ' + nombre AS nombreProp, idUsuario, nombreCompleto AS nombreTelefono, email, prioridad";
-    final static String TABLA = "GENUsuario inner join GENUsuarioTelefonos on GENUsuario.Id_Usuario = GENUsuarioTelefonos.IdUsuario";
-    private String condicion = "";
-    private final static String BD = "phenlinea";
-
-    private SoapPrimitive result;
-    private String message = "";
-
-    private ObjectMapper mapper;
     private boolean speakerState = false;
 
     private Intent serviceIntent;
+
+    //RECORDING
+    MediaRecorder mediaRecorder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,8 +58,6 @@ public class CallActivity extends AppCompatActivity {
 
         ongoingCall = new OngoingCall();
         disposables = new CompositeDisposable();
-
-        mapper = new ObjectMapper();
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
                 | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
@@ -107,7 +69,9 @@ public class CallActivity extends AppCompatActivity {
         binding.btnAnswer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 ongoingCall.answer();
+                onRecord();
             }
         });
 
@@ -115,6 +79,7 @@ public class CallActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 ongoingCall.hangup();
+                onStopRecord();
             }
         });
 
@@ -127,8 +92,6 @@ public class CallActivity extends AppCompatActivity {
     }
 
     private void switchSpeaker(View v) {
-
-
         serviceIntent = new Intent(this, CallService.class);
 
         if(speakerState){
@@ -141,68 +104,6 @@ public class CallActivity extends AppCompatActivity {
         }
         startService(serviceIntent);
         speakerState = !speakerState;
-
-
-    }
-
-    private void createSoapConfig() {
-        condicion = "WHERE GENUsuarioTelefonos.Telefono = '"+ number +"'";
-
-        try {
-            SoapObject Request = new SoapObject(NAMESPACE, METHOD_NAME);
-            Request.addProperty("campo", CAMPO);
-            Request.addProperty("tabla", TABLA);
-            Request.addProperty("condicion", condicion);
-            Request.addProperty("bd", BD);
-            SoapSerializationEnvelope soapEnvelope = new SoapSerializationEnvelope(SoapEnvelope.VER11);
-            soapEnvelope.dotNet = true;
-            soapEnvelope.setOutputSoapObject(Request);
-            HttpTransportSE transport = new HttpTransportSE(URL);
-            transport.call(SOAP_ACTION, soapEnvelope);
-            result = (SoapPrimitive) soapEnvelope.getResponse();
-            message = "OK";
-        } catch (Exception e) {
-            message = "Error: " + e.getMessage();
-        }
-    }
-
-    public class GetUsuarioByNumber extends AsyncTask<Void, Void, Void> {
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            createSoapConfig();
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            if ((message.equals("OK"))) {
-                String value = result.toString();
-
-                if (value.equals("")) {
-                    binding.callName.setText(number);
-                    return;
-                }
-
-                try {
-                    List<GenusuarioTelefonoModel> userLst = mapper.readValue(value, new TypeReference<List<GenusuarioTelefonoModel>>(){});
-
-                    if(userLst.size() == 0) {
-                        binding.callName.setText(number);
-                        return;
-                    }
-
-                    String[] dataTitle = userLst.get(0).getNombreProp().split("-");
-
-                    String title = dataTitle[0] + " - " +  userLst.get(0).getNombreTelefono();
-
-                    binding.callName.setText(title);
-
-                } catch (IOException e) {
-                    Timber.tag("Error").d(e);
-                }
-            }
-        }
     }
 
     @Override
@@ -211,8 +112,51 @@ public class CallActivity extends AppCompatActivity {
 
         assert updateUi(-1) != null;
 
-        GetUsuarioByNumber soapRequest = new GetUsuarioByNumber();
-        soapRequest.execute();
+        GenusuarioTelefonoService usuarioService = new GenusuarioTelefonoService(new MyRetrofit().getRetrofitConfig());
+        usuarioService.getAllWithCode(CallActivity.this, new Callback<List<GenusuarioTelefonos>>() {
+            @Override
+            public void onResponse(retrofit2.Call<List<GenusuarioTelefonos>> call, Response<List<GenusuarioTelefonos>> response) {
+                if(!response.isSuccessful()){
+                    Toast.makeText(CallActivity.this, "Error: " + response.errorBody().toString(), Toast.LENGTH_SHORT).show();
+                    binding.callName.setText(number);
+                    return;
+                }
+
+                List<GenusuarioTelefonos> lstUsers = response.body();
+                if(lstUsers == null || lstUsers.size() == 0){
+                    binding.callName.setText(number);
+                    return;
+                }
+                GenusuarioTelefonos userToUse = null;
+                for (GenusuarioTelefonos user: lstUsers) {
+                    if(user.getTelefono().trim().equals(number.trim())){
+                        userToUse = user;
+                        break;
+                    }
+                }
+
+                if(userToUse == null) {
+                    binding.callName.setText(number);
+                }else{
+                    binding.callName.setText(userToUse.getNombreCompleto());
+                    /*if(userToUse.getTipo() == null) return;
+
+                    if(userToUse.getTipo().equals("M")){
+                        binding.callType.setText("MOVIL");
+                    }else if(userToUse.getTipo().equals("F")) {
+                        binding.callType.setText("FIJO");
+                    }else {
+                        binding.callType.setText("No identificado");
+                    }*/
+                }
+            }
+
+            @Override
+            public void onFailure(retrofit2.Call<List<GenusuarioTelefonos>> call, Throwable t) {
+                binding.callName.setText(number);
+                Toast.makeText(CallActivity.this, "Fatal error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
 
         disposables.add(
                 OngoingCall.state
@@ -269,11 +213,11 @@ public class CallActivity extends AppCompatActivity {
 
             binding.callTimer.setVisibility(View.VISIBLE);
             binding.callTimer.start();
-            //record();
+            onRecord();
         }
 
         if(state == Call.STATE_DISCONNECTED){ //CALL END
-        //stopRecord();
+        onStopRecord();
         binding.callTimer.stop();
         binding.btnHangup.setVisibility(View.GONE);
         binding.speakerContainer.setVisibility(View.GONE);
@@ -294,5 +238,37 @@ public class CallActivity extends AppCompatActivity {
         .setData(call.getDetails().getHandle());
 
         context.startActivity(intent);
+    }
+
+    private void onRecord(){
+
+        try {
+            mediaRecorder = new MediaRecorder();
+            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+            mediaRecorder.setOutputFile(getFileName());
+            mediaRecorder.prepare();
+            mediaRecorder.start();
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private String getFileName() {
+        ContextWrapper contextWrapper = new ContextWrapper(getApplicationContext());
+        File musicDirector = contextWrapper.getExternalFilesDir(Environment.DIRECTORY_MUSIC);
+        File file = new File(musicDirector, "testRecordingFile" + ".mp3");
+        return file.getPath();
+    }
+
+    private void onStopRecord(){
+        if(mediaRecorder != null){
+            mediaRecorder.stop();
+            mediaRecorder.release();
+            mediaRecorder = null;
+        }
+
     }
 }

@@ -1,6 +1,7 @@
 package com.example.phenlineadialer;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -8,6 +9,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.telecom.TelecomManager;
@@ -17,6 +19,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.example.phenlineadialer.databinding.ActivityDialerBinding;
+import com.example.phenlineadialer.helpers.MySharedPreferences;
 
 import kotlin.collections.ArraysKt;
 
@@ -24,6 +27,7 @@ import static android.Manifest.permission.CALL_PHONE;
 import static android.support.v4.content.PermissionChecker.PERMISSION_GRANTED;
 import static android.telecom.TelecomManager.ACTION_CHANGE_DEFAULT_DIALER;
 import static android.telecom.TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME;
+import static com.example.phenlineadialer.helpers.MySharedPreferences.CODIGO_PH;
 
 public class DialerActivity extends AppCompatActivity implements View.OnClickListener{
 
@@ -46,7 +50,7 @@ public class DialerActivity extends AppCompatActivity implements View.OnClickLis
     protected void onStart() {
         super.onStart();
         offerReplacingDefaultDialer();
-        requestAudioRecord();
+        validateMic();
 
         binding.btn0.setOnClickListener(this);
         binding.btn1.setOnClickListener(this);
@@ -61,17 +65,47 @@ public class DialerActivity extends AppCompatActivity implements View.OnClickLis
         binding.btnErase.setOnClickListener(this);
         binding.btnClear.setOnClickListener(this);
 
+        binding.btnEditBd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                DialogSetDataBase dialog = new DialogSetDataBase(DialerActivity.this);
+                Activity mAct = (Activity) DialerActivity.this;
+                FragmentActivity fAct = (FragmentActivity) mAct;
+                dialog.show(fAct.getSupportFragmentManager(), "DialogSetDataBase");
+            }
+        });
+
         binding.btnCall.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 makeCall();
             }
         });
+
+        MySharedPreferences mPref = new MySharedPreferences(DialerActivity.this);
+        String codigoBd = mPref.getPreferencesString(CODIGO_PH);
+
+        if (codigoBd.isEmpty()) {
+            DialogSetDataBase dialog = new DialogSetDataBase(DialerActivity.this);
+            Activity mAct = (Activity) DialerActivity.this;
+            FragmentActivity fAct = (FragmentActivity) mAct;
+            dialog.show(fAct.getSupportFragmentManager(), "DialogSetDataBase");
+        }
     }
 
-    private void requestAudioRecord() {
-        if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(DialerActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO}, 1000);
+    private void validateMic() {
+        if(isMicrophonePresent()){
+            getMicPermission();
+        }
+    }
+
+    private boolean isMicrophonePresent() {
+        return this.getPackageManager().hasSystemFeature(PackageManager.FEATURE_MICROPHONE);
+    }
+
+    private void getMicPermission(){
+        if (ContextCompat.checkSelfPermission(DialerActivity.this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_DENIED){
+            ActivityCompat.requestPermissions(DialerActivity.this, new String [] {Manifest.permission.RECORD_AUDIO}, 200);
         }
     }
 

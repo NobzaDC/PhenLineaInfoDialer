@@ -5,14 +5,30 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <ImageView
+    <LinearLayout
         android:id="@+id/header"
-        android:layout_width="wrap_content"
-        android:layout_height="?attr/actionBarSize"
-        android:contentDescription="@string/todo"
-        android:scaleType="fitCenter"
-        android:layout_alignParentTop="true"
-        android:src="@drawable/ph_en_linea_header_trans" />
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="10">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:layout_alignParentTop="true"
+            android:contentDescription="@string/todo"
+            android:scaleType="fitCenter"
+            android:layout_weight="2"
+            android:src="@drawable/ph_en_linea_header_trans" />
+
+        <ImageButton
+            android:id="@+id/btn_edit_bd"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="8"
+            android:background="@color/transparent"
+            android:src="@drawable/ic_edit_gray" />
+
+    </LinearLayout>
 
     <EditText
         android:id="@+id/phoneNumberInput"
@@ -213,13 +229,13 @@
                 android:layout_weight="3"
                 android:background="@null"
                 android:backgroundTint="@null"
+                android:contentDescription="@string/todo"
                 android:src="@drawable/ic_back"
                 android:text=""
                 android:textAlignment="center"
                 android:textColor="@color/black"
                 android:textSize="14sp"
-                app:backgroundTint="@null"
-                android:contentDescription="@string/todo" />
+                app:backgroundTint="@null" />
 
         </LinearLayout>
 

@@ -18,4 +18,5 @@
     <string name="_0">0</string>
     <string name="llamar">LLAMAR</string>
     <string name="speaker">ALTAVOZ</string>
+    <string name="nombre_base_de_datos">NOMBRE BASE DE DATOS</string>
 </resources>
