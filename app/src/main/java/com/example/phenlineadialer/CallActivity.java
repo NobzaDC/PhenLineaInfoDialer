@@ -71,7 +71,6 @@ public class CallActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 ongoingCall.answer();
-                onRecord();
             }
         });
 
@@ -79,7 +78,6 @@ public class CallActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 ongoingCall.hangup();
-                onStopRecord();
             }
         });
 
@@ -213,15 +211,15 @@ public class CallActivity extends AppCompatActivity {
 
             binding.callTimer.setVisibility(View.VISIBLE);
             binding.callTimer.start();
-            onRecord();
+            //onRecord();
         }
 
         if(state == Call.STATE_DISCONNECTED){ //CALL END
-        onStopRecord();
+        //onStopRecord();
         binding.callTimer.stop();
         binding.btnHangup.setVisibility(View.GONE);
         binding.speakerContainer.setVisibility(View.GONE);
-
+        this.finishAffinity();
         }
         return null;
     }
@@ -238,37 +236,5 @@ public class CallActivity extends AppCompatActivity {
         .setData(call.getDetails().getHandle());
 
         context.startActivity(intent);
-    }
-
-    private void onRecord(){
-
-        try {
-            mediaRecorder = new MediaRecorder();
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-            mediaRecorder.setOutputFile(getFileName());
-            mediaRecorder.prepare();
-            mediaRecorder.start();
-
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-    }
-
-    private String getFileName() {
-        ContextWrapper contextWrapper = new ContextWrapper(getApplicationContext());
-        File musicDirector = contextWrapper.getExternalFilesDir(Environment.DIRECTORY_MUSIC);
-        File file = new File(musicDirector, "testRecordingFile" + ".mp3");
-        return file.getPath();
-    }
-
-    private void onStopRecord(){
-        if(mediaRecorder != null){
-            mediaRecorder.stop();
-            mediaRecorder.release();
-            mediaRecorder = null;
-        }
-
     }
 }
