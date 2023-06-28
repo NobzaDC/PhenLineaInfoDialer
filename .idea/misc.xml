@@ -3,7 +3,8 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
-        <entry key="..\:/Proyectos/Android studio/PhenLineaInfoDialer/app/src/main/res/layout/activity_call.xml" value="0.36666666666666664" />
+        <entry key="..\:/Proyectos/Android studio/PhenLineaInfoDialer/app/src/main/res/drawable/ic_answer.xml" value="0.14" />
+        <entry key="..\:/Proyectos/Android studio/PhenLineaInfoDialer/app/src/main/res/layout/activity_call.xml" value="0.35353535353535354" />
         <entry key="..\:/Proyectos/Android studio/PhenLineaInfoDialer/app/src/main/res/layout/activity_dialer.xml" value="0.36666666666666664" />
         <entry key="..\:/Proyectos/Android studio/PhenLineaInfoDialer/app/src/main/res/layout/dialog_set_database.xml" value="0.36666666666666664" />
         <entry key="..\:/Proyectos/Android studio/PhenLineaInfoDialer/app/src/main/res/xml/network_security_config.xml" value="0.36666666666666664" />

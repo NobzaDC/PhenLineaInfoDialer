@@ -78,6 +78,8 @@ public class CallActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 ongoingCall.hangup();
+                Intent intent = new Intent(getBaseContext(), DialerActivity.class);
+                startActivity(intent);
             }
         });
 
